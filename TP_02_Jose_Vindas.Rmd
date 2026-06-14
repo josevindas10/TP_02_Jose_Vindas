@@ -1,0 +1,34 @@
+---
+title: "Untitled"
+author: "José Eduardo Vindas Artavia"
+date: "2026-06-12"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  cho = TRUE, 
+  warning = FALSE, 
+  message = FALSE)
+```
+
+# Carga, exploración y calidad de datos
+
+## 1. Carga de paquetes y tablas
+```{r}
+# Carga de bibliotecas requeridas
+library(nycflights13)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(lubridate)
+library(DT)
+
+# Carga de las cinco tablas del paquete
+data("flights")
+data("airlines")
+data("airports")
+data("planes")
+data("weather")
+```
+
