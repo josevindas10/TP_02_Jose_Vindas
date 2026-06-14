@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "Tarea Programada 2"
 author: "José Eduardo Vindas Artavia"
 date: "2026-06-12"
 output: html_document
@@ -14,7 +14,8 @@ knitr::opts_chunk$set(
 
 # Carga, exploración y calidad de datos
 
-## 1. Carga de paquetes y tablas
+## Carga de paquetes y tablas
+
 ```{r}
 # Carga de bibliotecas requeridas
 library(nycflights13)
@@ -30,5 +31,73 @@ data("airlines")
 data("airports")
 data("planes")
 data("weather")
+```
+
+## Vista paginada de las primeras 100 observaciones de flights
+
+```{r}
+datatable(
+  head(flights, 100),
+  options = list(pageLength = 10, scrollX = TRUE),
+  caption = "Primeras 100 observaciones de flights"
+)
+```
+
+## Tabla resumen de dimensiones y tipos de variables
+
+```{r}
+resumen_tablas <- data.frame(
+  Tabla    = c("flights", "airlines", "airports", "planes", "weather"),
+  Filas    = c(nrow(flights), nrow(airlines), nrow(airports), nrow(planes), nrow(weather)),
+  Columnas = c(ncol(flights), ncol(airlines), ncol(airports), ncol(planes), ncol(weather)),
+  Tipo_de_Variables = c("Numérico, carácter",
+                     "Carácter",
+                     "Carácter, numérico",
+                     "Carácter, numérico",
+                     "Numérico, carácter")
+                      )
+
+datatable(resumen_tablas, caption = "Resumen de dimensiones y tipos de variables por tabla")
+```
+
+## Valores faltantes en variables principales de flights
+
+```{r}
+valores_faltantes <- data.frame(
+  Variable     = c("dep_time", "dep_delay", "arr_time", "arr_delay", "tailnum"),
+  N_faltantes  = c(
+    sum(is.na(flights$dep_time)),
+    sum(is.na(flights$dep_delay)),
+    sum(is.na(flights$arr_time)),
+    sum(is.na(flights$arr_delay)),
+    sum(is.na(flights$tailnum))
+  )
+)
+
+datatable(
+  valores_faltantes,
+  options = list(dom = "t"),
+  caption = "Valores faltantes en variables principales de flights"
+)
+```
+
+Los valores faltantes en dep_time, dep_delay, arr_time y arr_delay corresponden a vuelos
+cancelados. Los faltantes en tailnum indican que no se registró la aeronave del vuelo.
+
+## Creación de variables derivadas
+
+```{r}
+flights <- flights %>%
+  mutate(
+    fecha           = ymd(paste(year, month, day, sep = "-")),
+    cancelado       = is.na(dep_time),
+    retraso_llegada = ifelse(cancelado, NA, arr_delay > 15)
+  )
+
+datatable(
+  head(select(flights, fecha, dep_time, arr_delay, cancelado, retraso_llegada), 10),
+  options = list(dom = "t"),
+  caption = "Muestra de las variables derivadas"
+)
 ```
 
