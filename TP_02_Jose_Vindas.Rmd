@@ -154,8 +154,6 @@ Lo anterior evidencia que las uniones no generaron duplicados ni aumentaron inde
 
 ## Registros sin correspondencia
 
-
-
 ```{r}
 # Cantidad de vuelos sin información de aerolínea
 sum(is.na(vuelos_analisis$name.x)) 
@@ -193,5 +191,100 @@ nrow(vuelos_limpios)
 
 Se mantienen los valores faltantes de variables secundarias porque podrían ser de utilidad en otros análisis. Pero se eliminan observaciones que carecen de variables fundamentales para estudiar los retrasos de los vuelos.
 
+
+# Visualización de datos
+
+## Número mensual de vuelos por aeropuerto de origen
+
+```{r}
+# Número de vuelos por mes y aeropuerto de origen. 
+vuelos_mes <- flights %>%
+  group_by(month, origin) %>% 
+  summarise(total = n())
+
+# Gráfico
+ggplot(vuelos_mes, aes(x = month, y = total, color = origin)) + 
+  geom_line() + 
+  geom_point() +
+  labs( title = "Número mensual de vuelos por aeropuerto de origen", 
+        x = "Mes", 
+        y = "Cantidad de vuelos", 
+        color = "Aeropuerto" ) + 
+  theme_minimal()
+```
+
+
+## 10 destinos que recibieron mayor cantidad de vuelos
+
+```{r}
+# 10 destinos con mayor cantidad de vuelos.
+destinos <- vuelos_analisis %>%
+  group_by(name.y) %>%
+  summarise(total = n()) %>%
+  arrange(desc(total)) %>%
+  slice_head(n = 10)
+
+# Gráfico
+ggplot(destinos,
+       aes(x = reorder(name.y, total),
+           y = total)) +
+  geom_col(fill = "black") +
+  coord_flip() +
+  labs(
+    title = "10 destinos con mayor cantidad de vuelos",
+    x = "Aeropuerto de destino",
+    y = "Cantidad de vuelos"
+  ) +
+  theme_minimal()
+```
+
+## Comparación del retraso de llegada entre los aeropuertos de origen
+
+```{r}
+boxplot(
+  arr_delay ~ origin,
+  data = vuelos_limpios,
+  outline = FALSE,
+  main = "Retraso en minutos de llegada por aeropuerto de origen",
+  xlab = "Aeropuerto de origen",
+  ylab = "Retraso de llegada"
+)
+```
+
+## Relación entre una condición meteorológica y el retraso de salida
+
+```{r}
+plot(
+  vuelos_limpios$precip,
+  vuelos_limpios$dep_delay,
+  main = "Precipitación y retraso de salida en minutos",
+  xlab = "Precipitación",
+  ylab = "Retraso de salida"
+)
+```
+\
+Se utilizó la precipitación como variable meteorológica debido a que las condiciones de lluvia o nieve pueden afectar las operaciones en los aeropuertos y contribuir a retrasos en la salida de los vuelos.
+
+## Tasa de cancelación por mes
+
+```{r}
+# Ttasa de cancelación por mes
+cancelacion_mes <- flights %>%
+  group_by(month) %>%
+  summarise(
+    tasa = mean(is.na(dep_time)) * 100
+  )
+
+# Gráfico
+ggplot(cancelacion_mes, aes(x = factor(month), y = tasa)) +
+  geom_col(fill = "black") +
+  labs(
+    title = "Tasa de cancelación por mes",
+    x = "Mes",
+    y = "Tasa de cancelación (%)") +
+  theme_minimal()
+```
+
+La tasa de cancelación varía a lo largo del año. El mes de febrero presenta la tasa más alta, con aproximadamente un 5% de los vuelos cancelados. Por otro lado, octubre y noviembre registran las tasas más bajas, inferiores al 1%.
 
 
