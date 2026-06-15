@@ -47,8 +47,8 @@ datatable(
 
 ```{r}
 resumen_tablas <- data.frame(
-  Tabla    = c("flights", "airlines", "airports", "planes", "weather"),
-  Filas    = c(nrow(flights), nrow(airlines), nrow(airports), nrow(planes), nrow(weather)),
+  Tabla = c("flights", "airlines", "airports", "planes", "weather"),
+  Filas = c(nrow(flights), nrow(airlines), nrow(airports), nrow(planes), nrow(weather)),
   Columnas = c(ncol(flights), ncol(airlines), ncol(airports), ncol(planes), ncol(weather)),
   Tipo_de_Variables = c("Numérico, carácter",
                      "Carácter",
@@ -64,8 +64,8 @@ datatable(resumen_tablas, caption = "Resumen de dimensiones y tipos de variables
 
 ```{r}
 valores_faltantes <- data.frame(
-  Variable     = c("dep_time", "dep_delay", "arr_time", "arr_delay", "tailnum"),
-  N_faltantes  = c(
+  Variable = c("dep_time", "dep_delay", "arr_time", "arr_delay", "tailnum"),
+  N_faltantes = c(
     sum(is.na(flights$dep_time)),
     sum(is.na(flights$dep_delay)),
     sum(is.na(flights$arr_time)),
@@ -89,8 +89,8 @@ cancelados. Los faltantes en tailnum indican que no se registró la aeronave del
 ```{r}
 flights <- flights %>%
   mutate(
-    fecha           = ymd(paste(year, month, day, sep = "-")),
-    cancelado       = is.na(dep_time),
+    fecha = ymd(paste(year, month, day, sep = "-")),
+    cancelado = is.na(dep_time),
     retraso_llegada = ifelse(cancelado, NA, arr_delay > 15)
   )
 
@@ -100,4 +100,98 @@ datatable(
   caption = "Muestra de las variables derivadas"
 )
 ```
+
+# Integración y preparación de datos
+
+## Construcción de vuelos_analisis
+
+```{r}
+# Cantidad original de vuelos
+filas_original <- nrow(flights)
+
+# Se realiza unión con airlines para incorporar información de la aerolínea
+vuelos_analisis <- flights %>% 
+  left_join(airlines, by = "carrier")
+
+# Se verifican las filas después de la unión
+nrow(vuelos_analisis)
+
+# Se realiza unión con airports para incorporar información del aeropuerto de destino
+vuelos_analisis <- vuelos_analisis %>% 
+  left_join(airports %>% 
+              select(faa, name), by = c("dest" = "faa"))
+
+# Se verifican las filas después de la unión
+nrow(vuelos_analisis)
+
+# Se realiza unión con planes para agregar características de la aeronave
+vuelos_analisis <- vuelos_analisis %>% 
+  left_join(planes %>% select(tailnum, year, manufacturer, model, seats), by = "tailnum")
+
+# Se verifican las filas después de la unión
+nrow(vuelos_analisis)
+
+# Se realiza unión con weather para agregar las condiciones meteorológicas correspondientes al aeropuerto de origen y hora de salida
+vuelos_analisis <- vuelos_analisis %>% 
+  left_join(weather %>% select( origin, time_hour, temp, visib, wind_speed, precip ), 
+            by = c("origin", "time_hour"))
+
+# Se verifican las filas después de la unión
+nrow(vuelos_analisis)
+
+```
+
+Se utiliza left_join() para conservar la totalidad de los registros de la tabla flights como referencia principal. Cuando un vuelo no encuentra correspondencia en la tabla complementaria, el registro se mantiene en la base de datos y los campos sin coincidencia se representan con NA, lo que garantiza que ningún vuelo se pierda durante el proceso de integración.
+
+## Comprobación del número de vulos luego de las uniones
+
+```{r}
+filas_original == nrow(vuelos_analisis)
+```
+
+Lo anterior evidencia que las uniones no generaron duplicados ni aumentaron indebidamente el número de vuelos.
+
+
+## Registros sin correspondencia
+
+
+
+```{r}
+# Cantidad de vuelos sin información de aerolínea
+sum(is.na(vuelos_analisis$name.x)) 
+
+# Cantidad de vuelos sin información de aeropuerto
+sum(is.na(vuelos_analisis$name.y)) 
+
+# Cantidad de vuelos sin información de la aeronave
+sum(is.na(vuelos_analisis$manufacturer)) 
+
+# Cantidad de vuelos sin información meteorológica
+sum(is.na(vuelos_analisis$temp)) 
+```
+
+**Posibles causas de los faltantes:**
+\
+Aerolínea: Sin valores faltantes, todos los vuelos tienen correspondencia con la tabla airlines.
+
+Aeropuerto: 7602 vuelos sin información, Esto puede deberse a que algunos aeropuertos no figuran en la tabla airports, ya sea por tratarse de aeropuertos internacionales, regionales o con identificadores distintos a los del catálogo utilizado.
+
+Aeronave: 52606 vuelos sin datos del fabricante, las causas más probables son matrículas no registradas en la tabla planes, aeronaves arrendadas que no figuran en el catálogo, o aviones de reciente incorporación sin historial documentado.
+
+Meteorología: 1573 vuelos sin datos climáticos, Puede explicarse por fallas en estaciones meteorológicas, ausencia de cobertura para ciertos aeropuertos, o simplemente porque no se registraron condiciones para algunas horas o fechas específicas.
+
+## Construcción de una base depurada
+
+```{r}
+# Se eliminan únicamente los registros que no poseen # información esencial para analizar retrasos de vuelos.
+vuelos_limpios <- vuelos_analisis %>% 
+  filter(!is.na(dep_delay), !is.na(arr_delay)) 
+
+# Cantidad de registros después de la depuración
+nrow(vuelos_limpios)
+```
+
+Se mantienen los valores faltantes de variables secundarias porque podrían ser de utilidad en otros análisis. Pero se eliminan observaciones que carecen de variables fundamentales para estudiar los retrasos de los vuelos.
+
+
 
