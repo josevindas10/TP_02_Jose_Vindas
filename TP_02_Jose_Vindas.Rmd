@@ -364,3 +364,52 @@ barplot(
   ylab = "Retraso promedio (minutos)"
 )
 ```
+
+
+# Estadística inferencial
+
+## Prueba t de una muestra
+
+Hipótesis:
+$$ H_0: \mu = 0 $$
+$$ H_1: \mu \neq 0 $$
+
+
+Nivel de significancia: $$ \alpha = 0.05 $$.
+
+```{r}
+prueba_t <- t.test(
+  vuelos_analisis$arr_delay,
+  mu = 0
+  )
+
+prueba_t
+```
+Con un nivel de significancia de 0.05, se rechaza la hipótesis nula. 
+Existe evidencia estadísticamente significativa para concluir que el retraso promedio de llegada de los vuelos completados es diferente de 0 minutos. Esto indica que, en promedio, los vuelos no llegan a su a tiempo.
+
+
+## Correlación de Pearson entre dep_delay y arr_delay
+
+```{r}
+correlacion <- cor.test(
+  vuelos_analisis$dep_delay,
+  vuelos_analisis$arr_delay,
+  method = "pearson"
+)
+
+correlacion$estimate
+
+correlacion$p.value
+```
+
+Se rechaza la hipótesis nula. Existe evidencia estadísticamente significativa de una relación lineal entre el retraso de salida y el retraso de llegada de los vuelos completados. Además, el coeficiente de correlación obtenido indica una relación positiva entre ambas variables. Esto significa que los vuelos que presentan mayores retrasos en la salida tienden también a presentar mayores retrasos en la llegada.
+
+
+## Influencia de el gran tamaño del conjunto de datos
+
+En ambos análisis, el gran tamaño del conjunto de datos influye en que los resultados sean estadísticamente significativos, ya que al aumentar la cantidad de observaciones, los valores p tienden a ser muy pequeños incluso ante diferencias o relaciones moderadas. En la prueba t, esto implica que el retraso promedio puede ser significativamente diferente de cero aunque la magnitud del retraso sea pequeña en términos reales, por lo que la importancia práctica puede ser limitada. En la correlación de Pearson, el resultado también es estadísticamente significativo, pero además el coeficiente obtenido (r ≈ 0.91) indica una relación fuerte entre el retraso de salida y el retraso de llegada, lo que sí tiene relevancia práctica. En general, la significancia estadística indica que el efecto es poco probable por azar, mientras que la relevancia práctica evalúa si ese efecto es suficientemente grande como para ser útil o importante en el contexto de los vuelos.
+
+
+
+
