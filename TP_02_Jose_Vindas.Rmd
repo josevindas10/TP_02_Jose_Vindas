@@ -181,7 +181,7 @@ Meteorología: 1573 vuelos sin datos climáticos, Puede explicarse por fallas en
 ## Construcción de una base depurada
 
 ```{r}
-# Se eliminan únicamente los registros que no poseen # información esencial para analizar retrasos de vuelos.
+# Se eliminan únicamente los registros que no poseen información esencial para analizar retrasos de vuelos.
 vuelos_limpios <- vuelos_analisis %>% 
   filter(!is.na(dep_delay), !is.na(arr_delay)) 
 
@@ -288,3 +288,79 @@ ggplot(cancelacion_mes, aes(x = factor(month), y = tasa)) +
 La tasa de cancelación varía a lo largo del año. El mes de febrero presenta la tasa más alta, con aproximadamente un 5% de los vuelos cancelados. Por otro lado, octubre y noviembre registran las tasas más bajas, inferiores al 1%.
 
 
+# Estadística descriptiva
+
+## Media, mediana, varianza y desviación estándar de arr_delay
+
+```{r}
+tabla_calculos <- vuelos_analisis %>%
+  summarise(
+    media = mean(arr_delay, na.rm = TRUE),
+    mediana = median(arr_delay, na.rm = TRUE),
+    varianza = var(arr_delay, na.rm = TRUE),
+    desviacion_estandar = sd(arr_delay, na.rm = TRUE)
+    )
+
+colnames(tabla_calculos) <- c("Media", "Mediana", "Varianza", "Desviacion Estándar")
+
+tabla_calculos
+```
+
+## Tabla resumen por aerolínea
+
+```{r}
+resumen_aerolinea <- vuelos_analisis %>%
+  group_by(carrier) %>%
+  summarise(
+    vuelos = n(),
+    porcentaje_cancelacion = mean(cancelado) * 100,
+    media_retraso = mean(arr_delay, na.rm = TRUE),
+    mediana_retraso = median(arr_delay, na.rm = TRUE)
+  ) %>%
+  arrange(desc(media_retraso))
+
+colnames(resumen_aerolinea) <- c("Carrier", "Cuelos", "Porcentaje Cancelación", "Media Retraso", "Mediana Retraso")
+
+resumen_aerolinea
+```
+
+
+## Tabla de contingencia origin vs cancelado
+```{r}
+tabla_origen <- table(vuelos_analisis$origin,
+    vuelos_analisis$cancelado)
+
+tabla_origen <- round(prop.table(tabla_origen, 1) * 100, 2)
+
+colnames(tabla_origen) <- c("No cancelado (%)", "Cancelado (%)")
+
+tabla_origen
+
+```
+
+## Hallazgo usando clima o aeronaves
+
+```{r}
+retraso_viento <- vuelos_analisis %>%
+  filter(!is.na(wind_speed), !is.na(dep_delay)) %>%
+  mutate(
+      viento = cut(
+      wind_speed,
+      breaks = c(0, 10, 20, 30, Inf),
+      labels = c("0-10", "10-20", "20-30", ">30")
+          )
+    ) %>%
+  filter(!is.na(viento)) %>%
+  group_by(viento) %>%
+  summarise(
+    retraso_promedio = mean(dep_delay)
+  )
+
+barplot(
+  retraso_viento$retraso_promedio,
+  names.arg = retraso_viento$viento,
+  main = "Retraso promedio según velocidad del viento",
+  xlab = "Velocidad del viento (mph)",
+  ylab = "Retraso promedio (minutos)"
+)
+```
