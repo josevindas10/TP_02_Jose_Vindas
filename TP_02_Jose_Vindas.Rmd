@@ -392,6 +392,7 @@ barplot(
   col = "#00008B"
 )
 ```
+\
 Con este gráfico podemos ver que a mayor velocidad del viento, hay un mayor retraso promedio de salida, esto porque con condiciones climatológicas adversas se dificultan más los despejes.
 
 
